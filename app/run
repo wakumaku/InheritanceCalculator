@@ -1,0 +1,40 @@
+#!/usr/bin/env php
+<?php
+
+use InheritanceCalculator\Family\FamilyFactory;
+use InheritanceCalculator\Lawyer\Lawyer;
+use InheritanceCalculator\Output\FamilyPrinter;
+use League\CLImate\CLImate;
+use Respect\Validation\Validator;
+
+include_once __DIR__ . '/../vendor/autoload.php';
+
+$cli = new CLImate();
+$familyFactory = new FamilyFactory();
+
+// Create new family
+$theFamily = $familyFactory->build();
+$familyPrinter = new FamilyPrinter($theFamily, $cli);
+
+$cli->clear();
+
+// Printout the generated family tree
+$cli->out("// *** BEFORE *** //");
+$familyPrinter->printTree();
+
+// Ask for date
+$today = date('Y-m-d');
+do {
+    $input = $cli->input('Enter a date ... (Y-m-d format) ['.$today.']:');
+    $input->defaultTo($today);
+    $dateBase = $input->prompt();
+} while (!Validator::date('Y-m-d')->validate($dateBase));
+
+// Create a new Lawyer to calculate inheritances
+$lawyer = new Lawyer($theFamily, $dateBase);
+$lawyer->calculateInheritance();
+
+// Printout the calculated family tree
+$cli->out("// *** AFTER *** //");
+$familyPrinter->setFamily($lawyer->getFamily());
+$familyPrinter->printTree();
